@@ -8,10 +8,11 @@ import numpy as np
 # load data
 z500 = xr.open_mfdataset('data/geopotential_500/*.nc', combine='by_coords')
 z500.z.isel(time=0).plot()
+plt.show()
 
 # Generate train and test data
 
-prev_time = 1200
+prev_time = 100
 lead_time = 3
 train_samples = 2
 
@@ -54,7 +55,7 @@ print(X_train.shape, y_train.shape, X_test.shape, y_test.shape)
 
 # training
 
-transformer_model = Transformer(d_model = 2048)
+transformer_model = Transformer(d_model=2048)
 transformer_model.train()
 for i in range(X_train.shape[1]):
     print(i)
@@ -91,7 +92,7 @@ for i in range(lead_time+1):
 #print(errors[73], errors[120])
 plt.plot(errors[1:])
 
-
+plt.show()
 # compute rmse
 # add mean and variance again, reshape data and plot data
 # plot error
