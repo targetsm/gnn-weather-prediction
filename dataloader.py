@@ -7,7 +7,7 @@ from torch.utils.data import Dataset, DataLoader
 class WeatherDataset(Dataset):
     def __init__(self, data_path, sample_time = 20, lead_time = 2, test=False):
         if test:
-            self.dataset = xr.open_mfdataset(data_path + 'geopotential_500/*.nc', combine='by_coords').sel(time=slice('2016', '2017'))
+            self.dataset = xr.open_mfdataset(data_path + '/geopotential_500/*.nc', combine='by_coords').sel(time=slice('2016', '2017'))
         else:
             self.dataset = xr.open_mfdataset(data_path + '/geopotential_500/*.nc', combine='by_coords').sel(time=slice('1990', '2015'))
         self.dataarray = self.dataset.to_array()
