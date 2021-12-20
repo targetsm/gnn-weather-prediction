@@ -6,3 +6,9 @@ class Evaluator:
 
     def __init__(self, sqrt, ):
         pass
+
+
+
+if __name__ == '__main__':
+
+    evaluate()

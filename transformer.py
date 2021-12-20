@@ -87,7 +87,7 @@ for i in range(lead_time+1):
     ys = y_test[i].squeeze()*data_std.to_array().values + data_mean.to_array().values # prob not correct...
     preds = output[i].squeeze() * data_std.to_array().values + data_mean.to_array().values
     print(ys, preds)
-    errors.append(np.sqrt(sklearn.metrics.mean_squared_error(ys,  preds)))
+    errors.append(np.sqrt(mean_squared_error(ys,  preds)))
 
 #print(errors[73], errors[120])
 plt.plot(errors[1:])

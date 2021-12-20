@@ -20,7 +20,7 @@ class WeatherDataset(Dataset):
         return self.dataset.sizes['time']-self.lead_time-self.sample_time
 
     def __getitem__(self, idx):
-        sample = torch.from_numpy(np.moveaxis(self.dataarray[:,idx: idx+self.sample_time].values, 0, -1))
+        sample = torch.from_numpy(np.moveaxis(self.dataarray[:,idx: idx+self.sample_time].values, 0, -1)) # super time-intensive, need to find other way...
         label = torch.from_numpy(np.moveaxis(self.dataarray[:,idx+self.sample_time:idx+self.sample_time+self.lead_time].values, 0, -1))
         return sample, label
 
