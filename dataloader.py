@@ -5,34 +5,56 @@ from torch.utils.data import Dataset, DataLoader
 
 
 class WeatherDataset(Dataset):
-    def __init__(self, data_path, sample_time = 20, lead_time = 2, test=False):
-        if test:
-            self.dataset = xr.open_mfdataset(data_path + '/geopotential_500/*.nc', combine='by_coords').sel(time=slice('2016', '2017'))
-        else:
-            self.dataset = xr.open_mfdataset(data_path + '/geopotential_500/*.nc', combine='by_coords').sel(time=slice('1990', '2015'))
-        self.dataarray = self.dataset.to_array()
-        self.sample_time = sample_time
-        self.mean = self.dataarray.mean()
-        self.std = self.dataarray.std()
+    def __init__(self, ds, var_dict, lead_time, time_steps=128, batch_size=32, shuffle=True, load=True, mean=None,
+                 std=None):
+
+        self.ds = ds
+        self.var_dict = var_dict
+        self.time_steps = time_steps
+        self.batch_size = batch_size
+        self.shuffle = shuffle
         self.lead_time = lead_time
 
+        data = []
+        generic_level = xr.DataArray([1], coords={'level': [1]}, dims=['level'])
+
+        for var, levels in var_dict.items():
+            data.append(ds[var].expand_dims({'level': generic_level}, 1))
+
+        self.data = xr.concat(data, 'level').transpose('time', 'lat', 'lon', 'level')
+        self.mean = self.data.mean(('time', 'lat', 'lon')).compute() if mean is None else mean
+        self.std = self.data.std('time').mean(('lat', 'lon')).compute() if std is None else std
+        # Normalize
+        self.data = (self.data - self.mean) / self.std
+        self.n_samples = self.data.isel(time=slice(0, - self.time_steps - self.lead_time - 1)).shape[0]
+        self.init_time = self.data.isel(time=slice(None, -lead_time)).time
+        self.valid_time = self.data.isel(time=slice(lead_time, None)).time
+
+        self.on_epoch_end()
+
+        print(self.data.isel(time=slice(0, -lead_time)).shape[0])
+        print(int(np.floor((self.n_samples - self.time_steps - self.lead_time) / (self.batch_size))))
+        print(self.n_samples, self.time_steps, self.lead_time, self.batch_size)
+
+        # For some weird reason calling .load() earlier messes up the mean and std computations
+        if load: print('Loading data into RAM'); self.data.load()
+
     def __len__(self):
-        return self.dataset.sizes['time']-self.lead_time-self.sample_time
+        'Denotes the number of batches per epoch'
+        return int(np.floor((self.n_samples - self.time_steps - self.lead_time) / (self.batch_size)))
 
-    def __getitem__(self, idx):
-        sample = torch.from_numpy(np.moveaxis(self.dataarray[:,idx: idx+self.sample_time].values, 0, -1)) # super time-intensive, need to find other way...
-        label = torch.from_numpy(np.moveaxis(self.dataarray[:,idx+self.sample_time:idx+self.sample_time+self.lead_time].values, 0, -1))
-        return sample, label
+    def __getitem__(self, i):
+        'Generate one batch of data'
+        idxs = self.idxs[i * self.batch_size: (i + 1) * self.batch_size]
+        x_li = [self.data.isel(time=idxs + j).values for j in range(self.time_steps)]
+        # X = self.data.isel(time=idxs).values
+        y = self.data.isel(time=idxs + self.time_steps + self.lead_time - 1).values
+        X = torch.from_numpy(np.stack(x_li, axis=1))
+        y = torch.from_numpy(np.expand_dims(y, axis=1))
+        return X, y
 
-
-if __name__ == '__main__':
-    training_data = WeatherDataset(data_path="data/")
-    print(training_data.mean, training_data.std)
-    print(training_data.dataarray)
-
-    sample, label = next(iter(training_data))
-    print(sample.shape, label.shape)
-
-    train_dataloader = DataLoader(training_data, batch_size=64, shuffle=True)
-    samples, labels = next(iter(train_dataloader))
-    print(samples.shape, labels.shape)
+    def on_epoch_end(self):
+        'Updates indexes after each epoch'
+        self.idxs = np.arange(self.n_samples)
+        if self.shuffle == True:
+            np.random.shuffle(self.idxs)
