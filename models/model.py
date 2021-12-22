@@ -9,6 +9,7 @@ class CustomModule(torch.nn.Module):
         self.model = Transformer(d_model=2048)
 
     def forward(self, x, y):
+        x = x[:,:,:,:,[0]]
         self.lead_time = y.shape[1]
         x_shape = x.shape
         x = x.reshape(x_shape[0], x_shape[1], x_shape[2]*x_shape[3]*x_shape[4]).transpose(0,1)
