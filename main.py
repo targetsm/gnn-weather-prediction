@@ -1,15 +1,9 @@
 import xarray as xr
-import numpy as np
-import torch
-from torch.utils.data import Dataset, DataLoader
 from dataloader import WeatherDataset
-from model import CustomModule
+from models.model import CustomModule
 import torch
-from torch.utils.data import DataLoader
 import numpy as np
 import matplotlib.pyplot as plt
-import time
-
 
 if __name__ == '__main__':
 
