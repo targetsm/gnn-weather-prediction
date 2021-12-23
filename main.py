@@ -16,14 +16,14 @@ if __name__ == '__main__':
     #predict_feature = 'z' need to make this variable
 
     datadir = 'C:/Users/gabri/Documents/ETH/Master/dl-project/data'
-    #ds = xr.open_mfdataset(f'{datadir}/geopotential_500/*.nc', combine='by_coords')
+    #z = xr.open_mfdataset(f'{datadir}/geopotential_500/*.nc', combine='by_coords')
     ds = xr.open_mfdataset(f'{datadir}/temperature_850/*.nc', combine='by_coords')
     #ds = xr.merge([z, t], compat='override')  # Override level. discarded later anyway.
 
-    dic = {'t': '850'}
+    dic = {'t': '850'} # dic = {'z':'500', 't': '850'}
     lead_time = 3*24  # (0 = next hour)  # 5 * 24
     # train_years = ('1979', '2015')
-    train_years = ('2013', '2015')
+    train_years = ('2013', '2016')
     test_years = ('2017', '2018')
 
     ds_train = ds.sel(time=slice(*train_years))
@@ -58,7 +58,7 @@ if __name__ == '__main__':
             print('[%d, %5d] loss: %.3f' %
                   (epoch + 1, i + 1, loss.item()/batch_size))
 
-            if i == 100:
+            if i == 10:
                 break
 
     print('Finished Training')
