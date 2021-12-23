@@ -4,9 +4,7 @@ import torch
 import matplotlib.pyplot as plt
 
 class Evaluator:
-    """
-    Evaluate test set for given model and compute scores
-    """
+    """Evaluate test set for given model and compute scores"""
 
     def __init__(self, datadir, model, dg_test):
         self.datadir = datadir
@@ -15,18 +13,17 @@ class Evaluator:
         model.eval()
 
     def evaluate(self):
+        """Perform evaluation on the test set"""
         pred_save_fn = f'{self.datadir}/predictions'
+
         # Create predictions
         pred = self.create_predictions(self.model, self.dg_test)
         print(f'Saving predictions: {pred_save_fn}')
         pred.to_netcdf(pred_save_fn)
-        print(pred.to_array(), )
+
         # Print score in real units
-        # TODO: Make flexible for other states
-        valid = self.load_test_data(f'{self.datadir}/temperature_850', 't').isel(time=self.dg_test.lead_time + self.dg_test.time_steps)
-        # t850_valid = load_test_data(f'{datadir}temperature_850', 't')
-        # valid = xr.merge([z500_valid, t850_valid], compat='override')
-        print(valid)
+        valid = self.load_test_data(f'{self.datadir}/temperature_850', 't').isel(
+            time=self.dg_test.lead_time + self.dg_test.time_steps)
         print(self.compute_weighted_rmse(pred, valid).load().to_array().values)
 
     def create_iterative_predictions(self, model, dg, max_lead_time=5 * 24):
@@ -47,7 +44,8 @@ class Evaluator:
                 das.append(xr.DataArray(
                     preds[:, :, :, :, lev_idx],
                     dims=['lead_time', 'time', 'lat', 'lon'],
-                    coords={'lead_time': lead_time, 'time': dg.init_time, 'lat': dg.ds.lat, 'lon': dg.ds.lon},
+                    coords={'lead_time': lead_time, 'time': dg.init_time, 'lat': dg.ds.lat,
+                            'lon': dg.ds.lon},
                     name=var
                 ))
                 lev_idx += 1
@@ -56,7 +54,8 @@ class Evaluator:
                 das.append(xr.DataArray(
                     preds[:, :, :, :, lev_idx:lev_idx + nlevs],
                     dims=['lead_time', 'time', 'lat', 'lon', 'level'],
-                    coords={'lead_time': lead_time, 'time': dg.init_time, 'lat': dg.ds.lat, 'lon': dg.ds.lon,
+                    coords={'lead_time': lead_time, 'time': dg.init_time, 'lat': dg.ds.lat,
+                            'lon': dg.ds.lon,
                             'level': levels},
                     name=var
                 ))
@@ -82,13 +81,11 @@ class Evaluator:
                 lev_idx += 1
             else:
                 nlevs = len(levels)
-                print(das)
-                print(preds.shape)
-                print(levels)
                 das.append(xr.DataArray(
                     preds[:, :, :, lev_idx:lev_idx+nlevs],
                     dims=['time', 'lat', 'lon', 'level'],
-                    coords={'time': dg.valid_time[:1], 'lat': dg.ds.lat, 'lon': dg.ds.lon, 'level': [levels]},
+                    coords={'time': dg.valid_time[:1], 'lat': dg.ds.lat, 'lon': dg.ds.lon,
+                            'level': [levels]},
                     name=var
                 ))
                 lev_idx += nlevs
@@ -104,11 +101,9 @@ class Evaluator:
         Returns:
             rmse: Latitude weighted root mean squared error
         """
-        print(da_true)
         error = da_fc - da_true
         weights_lat = np.cos(np.deg2rad(error.lat))
         weights_lat /= weights_lat.mean()
-        print('value:', error.to_array().values)
         rmse = np.sqrt(((error)**2 * weights_lat).mean(mean_dims))
         return rmse
 
@@ -124,22 +119,14 @@ class Evaluator:
         """
         ds = xr.open_mfdataset(f'{path}/*.nc', combine='by_coords')[var]
         if var in ['z', 't']:
-            try:
-                ds = ds.drop('level')
-            except ValueError:
-                ds = ds.drop('level')
+            ds = ds.drop('level')
         return ds.sel(time=years)
 
     def print_sample(self):
+        """Plot sample comparison"""
         x_test, y_test = next(iter(self.dg_test))
         y_test = y_test[:, :, :, :, [0]]
         prediction = self.model(x_test, y_test)
-        print(y_test.shape)
-        # prediction = x_test[:,-2:-1,:,:,[0]]
-        print(prediction.shape, x_test.shape)
-        error = np.sqrt(torch.sum((y_test - prediction) ** 2).numpy() / y_test.numpy().size)
-
-        print(error)
 
         plt.imshow(prediction[-1, -1])
         plt.show()

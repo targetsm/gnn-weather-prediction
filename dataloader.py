@@ -5,8 +5,8 @@ from torch.utils.data import Dataset, DataLoader
 
 
 class WeatherDataset(Dataset):
-    def __init__(self, ds, var_dict, lead_time, time_steps=128, batch_size=32, shuffle=True, load=True, mean=None,
-                 std=None):
+    def __init__(self, ds, var_dict, lead_time, time_steps=128, batch_size=32, shuffle=True,
+                 load=True, mean=None, std=None):
 
         self.ds = ds
         self.var_dict = var_dict

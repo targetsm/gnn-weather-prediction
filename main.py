@@ -12,8 +12,8 @@ import matplotlib.pyplot as plt
 if __name__ == '__main__':
 
     time_step = 10*24
-    batch_size = 1
-    #predited_feature = 'z' need to make this variable
+    batch_size = 4
+    #predict_feature = 'z' need to make this variable
 
     datadir = 'C:/Users/gabri/Documents/ETH/Master/dl-project/data'
     #ds = xr.open_mfdataset(f'{datadir}/geopotential_500/*.nc', combine='by_coords')
@@ -30,8 +30,8 @@ if __name__ == '__main__':
     ds_test = ds.sel(time=slice(*test_years))
 
     dg_train = WeatherDataset(ds_train, dic, lead_time, time_steps=time_step, batch_size=batch_size)
-    dg_test = WeatherDataset(ds_test, dic, lead_time, time_steps=time_step, batch_size=batch_size, mean=dg_train.mean,
-                            std=dg_train.std, shuffle=False)
+    dg_test = WeatherDataset(ds_test, dic, lead_time, time_steps=time_step, batch_size=batch_size,
+                             mean=dg_train.mean, std=dg_train.std, shuffle=False)
     print(f'Mean = {dg_train.mean}; Std = {dg_train.std}')
 
     model = CustomModule()
@@ -49,41 +49,22 @@ if __name__ == '__main__':
             optimizer.zero_grad()
 
             outputs = model(inputs, labels)
-            #plt.imshow(outputs.detach().numpy()[-1, -1, :, :, 0])
-            #plt.show()
+
             loss = criterion(outputs, labels)
             loss.backward()
             optimizer.step()
 
             print('[%d, %5d] loss: %.3f' %
-                  (epoch + 1, i + 1, loss.item()))
+                  (epoch + 1, i + 1, loss.item()/batch_size))
 
             if i == 100:
                 break
 
     print('Finished Training')
 
-    
-    '''with torch.no_grad():
-        model.eval()
-        x_test, y_test = next(iter(dg_test))
-        y_test = y_test[:,:,:,:,[0]]
-        prediction = model(x_test, y_test)
-        print(y_test.shape)
-        #prediction = x_test[:,-2:-1,:,:,[0]]
-        print(prediction.shape, x_test.shape)
-        error = np.sqrt(torch.sum((y_test - prediction) ** 2).numpy() / y_test.numpy().size)
-
-        print(error)
-
-        plt.imshow(prediction[-1, -1])
-        plt.show()
-        plt.imshow(y_test[-1,-1])
-        plt.show()'''
-
     # evaluate on test set
-
     evaluator = Evaluator(datadir, model, dg_test)
     evaluator.evaluate()
+    evaluator.print_sample()
 
 
