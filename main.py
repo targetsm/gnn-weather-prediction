@@ -39,7 +39,8 @@ if __name__ == '__main__':
     num_epochs = 1
     learning_rate = 1e-6
     criterion = torch.nn.MSELoss(reduction='sum')
-    optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate)
+    optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
+
 
     for epoch in range(num_epochs):
         for i, data in enumerate(dg_train, 0):

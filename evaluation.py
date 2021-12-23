@@ -24,7 +24,7 @@ class Evaluator:
         # Print score in real units
         valid = self.load_test_data(f'{self.datadir}/temperature_850', 't').isel(
             time=self.dg_test.lead_time + self.dg_test.time_steps)
-        print(self.compute_weighted_rmse(pred, valid).load().to_array().values)
+        print('RMSE:',self.compute_weighted_rmse(pred, valid).load().to_array().values)
 
     def create_iterative_predictions(self, model, dg, max_lead_time=5 * 24):
         """Create iterative predictions"""
