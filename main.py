@@ -3,15 +3,12 @@ from dataloader import WeatherDataset
 from models.model import CustomModule
 from evaluation import Evaluator
 import torch
-import numpy as np
-import matplotlib.pyplot as plt
-
 
 
 
 if __name__ == '__main__':
 
-    time_step = 10*24
+    time_step = 5*24
     batch_size = 4
     #predict_feature = 'z' need to make this variable
 
@@ -34,7 +31,9 @@ if __name__ == '__main__':
                              mean=dg_train.mean, std=dg_train.std, shuffle=False)
     print(f'Mean = {dg_train.mean}; Std = {dg_train.std}')
 
-    model = CustomModule()
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    print(f"Using {device} device")
+    model = CustomModule().to(device)
 
     num_epochs = 1
     learning_rate = 1e-6
@@ -58,7 +57,7 @@ if __name__ == '__main__':
             print('[%d, %5d] loss: %.3f' %
                   (epoch + 1, i + 1, loss.item()/batch_size))
 
-            if i == 10:
+            if i == 0:
                 break
 
     print('Finished Training')
