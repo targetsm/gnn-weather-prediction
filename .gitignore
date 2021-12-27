@@ -1,2 +1,7 @@
 # data directory
 data/
+
+.idea/
+*.nc
+geopotential_500_5.625deg.zip
+*.pyc
