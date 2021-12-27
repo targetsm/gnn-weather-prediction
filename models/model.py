@@ -25,7 +25,7 @@ class CustomModule(torch.nn.Module):
                     print(i)
                     output[i] = self.model(x, output[:i], tgt_mask=src_mask[:i, :i])[
                         i - 1]
-            return output[:-1].reshape(y_shape)
+            return output[-1].reshape(y_shape)
         #print(x.shape, y.shape)
         output = self.model(x, y)
         return output.reshape(y_shape)
