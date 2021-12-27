@@ -124,7 +124,7 @@ def main():
 
     batch_size = 4
 
-    datadir = 'D:/datasets/WeatherBench'
+    datadir = './data'
     z = xr.open_mfdataset(f'{datadir}/geopotential_500/geopotential_500_5.625deg/*.nc', combine='by_coords')
     t = xr.open_mfdataset(f'{datadir}/temperature_850/temperature_850_5.625deg/*.nc', combine='by_coords')
     ds = xr.merge([z, t], compat='override')  # Override level. discarded later anyway.
