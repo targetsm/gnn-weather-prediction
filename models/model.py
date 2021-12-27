@@ -4,10 +4,10 @@ import numpy as np
 
 class CustomModule(torch.nn.Module):
 
-    def __init__(self):
+    def __init__(self, device):
         super(CustomModule, self).__init__()
         self.model = Transformer(d_model=2048)
-
+        self.device = device
     def forward(self, x, y):
         x = x[:,:,:,:,[0]]
         self.lead_time = y.shape[1]
@@ -17,8 +17,8 @@ class CustomModule(torch.nn.Module):
         y = y.reshape(y_shape[0], y_shape[1], y_shape[2]*y_shape[3]*y_shape[4]).transpose(0,1)
         #print(self.lead_time)
         if not self.training:
-            src_mask = Transformer.generate_square_subsequent_mask(self.lead_time + 1)
-            output = torch.from_numpy(np.full([y.shape[0]+1, y.shape[1], y.shape[2]], x[-1])[:self.lead_time + 1])
+            src_mask = Transformer.generate_square_subsequent_mask(self.lead_time + 1).to(self.device)
+            output = torch.from_numpy(np.full([y.shape[0]+1, y.shape[1], y.shape[2]], x[-1].cpu())[:self.lead_time + 1]).to(self.device)
             #print(output.shape)
             with torch.no_grad():
                 for i in range(1, self.lead_time + 1):

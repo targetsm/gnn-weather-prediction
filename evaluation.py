@@ -6,10 +6,11 @@ import matplotlib.pyplot as plt
 class Evaluator:
     """Evaluate test set for given model and compute scores"""
 
-    def __init__(self, datadir, model, dg_test):
+    def __init__(self, datadir, model, dg_test, device):
         self.datadir = datadir
         self.model = model
         self.dg_test = dg_test
+        self.device = device
         model.eval()
 
     def evaluate(self):
@@ -65,7 +66,9 @@ class Evaluator:
     def create_predictions(self, model, dg):
         """Create non-iterative predictions"""
         x_test, y_test = next(iter(dg))
-        preds = model(x_test, y_test)[0]
+        x_test = x_test.to(self.device)
+        y_test = y_test[:,:,:,:,[0]].to(self.device)
+        preds = model(x_test, y_test)[0].cpu()
         # Unnormalize
         preds = preds * dg.std.values + dg.mean.values
         das = []
@@ -125,10 +128,11 @@ class Evaluator:
     def print_sample(self):
         """Plot sample comparison"""
         x_test, y_test = next(iter(self.dg_test))
-        y_test = y_test[:, :, :, :, [0]]
-        prediction = self.model(x_test, y_test)
+        y_test = y_test[:, :, :, :, [0]].to(self.device)
+        x_test = x_test.to(self.device)
+        prediction = self.model(x_test, y_test).cpu()
 
         plt.imshow(prediction[-1, -1])
         plt.show()
-        plt.imshow(y_test[-1, -1])
+        plt.imshow(y_test[-1, -1].cpu())
         plt.show()

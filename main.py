@@ -12,7 +12,7 @@ if __name__ == '__main__':
     batch_size = 4
     #predict_feature = 'z' need to make this variable
 
-    datadir = 'C:/Users/gabri/Documents/ETH/Master/dl-project/data'
+    datadir = './data'
     #z = xr.open_mfdataset(f'{datadir}/geopotential_500/*.nc', combine='by_coords')
     ds = xr.open_mfdataset(f'{datadir}/temperature_850/*.nc', combine='by_coords')
     #ds = xr.merge([z, t], compat='override')  # Override level. discarded later anyway.
@@ -33,7 +33,7 @@ if __name__ == '__main__':
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
     print(f"Using {device} device")
-    model = CustomModule().to(device)
+    model = CustomModule(device).to(device)
 
     num_epochs = 1
     learning_rate = 1e-6
@@ -44,7 +44,8 @@ if __name__ == '__main__':
     for epoch in range(num_epochs):
         for i, data in enumerate(dg_train, 0):
             inputs, labels = data
-            labels = labels[:,:,:,:,[0]]
+            inputs = inputs.to(device)
+            labels = labels[:,:,:,:,[0]].to(device)
 
             optimizer.zero_grad()
 
@@ -57,13 +58,13 @@ if __name__ == '__main__':
             print('[%d, %5d] loss: %.3f' %
                   (epoch + 1, i + 1, loss.item()/batch_size))
 
-            if i == 0:
+            if i == 5000:
                 break
 
     print('Finished Training')
 
     # evaluate on test set
-    evaluator = Evaluator(datadir, model, dg_test)
+    evaluator = Evaluator(datadir, model, dg_test, device)
     evaluator.evaluate()
     evaluator.print_sample()
 
