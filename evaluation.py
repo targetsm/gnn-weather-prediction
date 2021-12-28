@@ -23,8 +23,7 @@ class Evaluator:
         pred.to_netcdf(pred_save_fn)
 
         # Print score in real units
-        valid = self.load_test_data(f'{self.datadir}/temperature_850', 't').isel(
-            time=self.dg_test.lead_time + self.dg_test.time_steps)
+        valid = self.load_test_data(f'{self.datadir}/temperature_850', 't')
         print('RMSE:',self.compute_weighted_rmse(pred, valid).load().to_array().values)
 
     def create_iterative_predictions(self, model, dg, max_lead_time=5 * 24):
