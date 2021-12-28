@@ -27,8 +27,9 @@ if __name__ == '__main__':
     ds_test = ds.sel(time=slice(*test_years))
 
     dg_train = WeatherDataset(ds_train, dic, lead_time, time_steps=time_step, batch_size=batch_size)
-    dg_test = WeatherDataset(ds_test, dic, lead_time, time_steps=time_step, batch_size=batch_size,
-                             mean=dg_train.mean, std=dg_train.std, shuffle=False)
+    dg_test = WeatherDataset(ds_test, dic, lead_time, time_steps=time_step, batch_size=ds_test.__len__(),
+                             mean=dg_train.mean, std=dg_train.std, shuffle=False, load=False)
+
     print(f'Mean = {dg_train.mean}; Std = {dg_train.std}')
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -42,7 +43,8 @@ if __name__ == '__main__':
 
 
     for epoch in range(num_epochs):
-        for i, data in enumerate(dg_train, 0):
+        i = 0
+        for data in dg_train:
             inputs, labels = data
             inputs = inputs.to(device)
             labels = labels[:,:,:,:,[0]].to(device)
@@ -57,9 +59,7 @@ if __name__ == '__main__':
 
             print('[%d, %5d] loss: %.3f' %
                   (epoch + 1, i + 1, loss.item()/batch_size))
-
-            if i == 5000:
-                break
+            i += 1
 
     print('Finished Training')
 
