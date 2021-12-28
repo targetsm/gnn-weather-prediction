@@ -2,6 +2,7 @@ import torch
 from torch.nn import Transformer
 import numpy as np
 
+
 class CustomModule(torch.nn.Module):
 
     def __init__(self):

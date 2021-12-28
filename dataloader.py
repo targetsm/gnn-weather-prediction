@@ -29,6 +29,7 @@ class WeatherDataset(Dataset):
         self.n_samples = self.data.isel(time=slice(0, - self.time_steps - self.lead_time - 1)).shape[0]
         self.init_time = self.data.isel(time=slice(None, -lead_time)).time
         self.valid_time = self.data.isel(time=slice(lead_time, None)).time
+        print(f'Number of timesteps: {self.time_steps}.')
 
         self.on_epoch_end()
 
