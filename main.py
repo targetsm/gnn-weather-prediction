@@ -1,7 +1,8 @@
 import xarray as xr
 import argparse
 from dataloader import WeatherDataset
-from models.lin_model import CustomModule
+from models.lin_model import LinearModel
+from models.graph_model import GraphModel
 from evaluation import Evaluator
 import torch
 
@@ -61,7 +62,13 @@ if __name__ == '__main__':
     optimizer = None
 
     if model_name == 'linear':
-        model = CustomModule(device).to(device)
+        model = LinearModel(device).to(device)
+        optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
+        if mode == 'test':
+            # load your model here in case of only testing
+            pass
+    elif model_name == 'graph':
+        model = GraphModel(device).to(device)
         optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
         if mode == 'test':
             # load your model here in case of only testing
@@ -92,7 +99,8 @@ if __name__ == '__main__':
         print('Finished Training')
 
     # evaluate on test set
-    preddir = args.predictions_path
-    evaluator = Evaluator(datadir, preddir, model, dg_test, device)
-    evaluator.evaluate()
-    evaluator.print_sample()
+    with torch.no_grad():
+        preddir = args.predictions_path
+        evaluator = Evaluator(datadir, preddir, model, dg_test, device)
+        evaluator.evaluate()
+        evaluator.print_sample()
