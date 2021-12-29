@@ -1,7 +1,7 @@
 import xarray as xr
 import argparse
 from dataloader import WeatherDataset
-from models.model import CustomModule
+from models.lin_model import CustomModule
 from evaluation import Evaluator
 import torch
 
