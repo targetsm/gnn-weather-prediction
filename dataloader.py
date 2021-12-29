@@ -28,7 +28,7 @@ class WeatherDataset(Dataset):
         self.data = (self.data - self.mean) / self.std
         self.n_samples = self.data.isel(time=slice(0, - self.time_steps - self.lead_time - 1)).shape[0]
         self.init_time = self.data.isel(time=slice(None, -lead_time)).time
-        self.valid_time = self.data.isel(time=slice(lead_time, None)).time
+        self.valid_time = self.data.isel(time=slice(self.time_steps + lead_time, None)).time
 
         self.on_epoch_end()
 
