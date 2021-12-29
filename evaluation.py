@@ -6,8 +6,9 @@ import matplotlib.pyplot as plt
 class Evaluator:
     """Evaluate test set for given model and compute scores"""
 
-    def __init__(self, datadir, model, dg_test, device):
+    def __init__(self, datadir, preddir, model, dg_test, device):
         self.datadir = datadir
+        self.preddir = preddir
         self.model = model
         self.dg_test = dg_test
         self.device = device
@@ -15,7 +16,7 @@ class Evaluator:
 
     def evaluate(self):
         """Perform evaluation on the test set"""
-        pred_save_fn = f'{self.datadir}/predictions'
+        pred_save_fn = f'{self.preddir}/predictions'
 
         # Create predictions
         pred = self.create_predictions(self.model, self.dg_test)

@@ -12,6 +12,7 @@ if __name__ == '__main__':
     parser.add_argument('--model', default='linear', help='select model',
                         choices=['register_your_model', 'linear', 'graph_wavenet'])
     parser.add_argument('--data_path', default='./data', help='specify path to dataset')
+    parser.add_argument('--predictions_path', default='.', help='specify where to store predictions')
 
     parser.add_argument('--train_start_year', type=int, default=2013, help='first year used for training')
     parser.add_argument('--train_end_year', type=int, default=2016, help='last year used for training')
@@ -20,6 +21,7 @@ if __name__ == '__main__':
     parser.add_argument('--batch_size', type=int, default=4, help='train batch size')
 
     args = parser.parse_args()
+    print(args)
     mode = args.mode
     model_name = args.model
     train_start_year = max(args.train_start_year, 1979)
@@ -71,9 +73,8 @@ if __name__ == '__main__':
 
     if mode == 'train':
         for epoch in range(num_epochs):
-            i = 0
-            for data in dg_train:
-                inputs, labels = data
+            for i in range(dg_train.__len__()):
+                inputs, labels = dg_train.__getitem__(i)
                 inputs = inputs.to(device)
                 labels = labels[:, :, :, :, [0]].to(device)
 
@@ -87,11 +88,11 @@ if __name__ == '__main__':
 
                 print('[%d, %5d] loss: %.3f' %
                       (epoch + 1, i + 1, loss.item() / batch_size))
-                i += 1
 
         print('Finished Training')
 
     # evaluate on test set
-    evaluator = Evaluator(datadir, model, dg_test, device)
+    preddir = args.predictions_path
+    evaluator = Evaluator(datadir, preddir, model, dg_test, device)
     evaluator.evaluate()
     evaluator.print_sample()
