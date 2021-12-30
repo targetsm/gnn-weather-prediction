@@ -6,12 +6,13 @@ import matplotlib.pyplot as plt
 class Evaluator:
     """Evaluate test set for given model and compute scores"""
 
-    def __init__(self, datadir, preddir, model, dg_test, device):
+    def __init__(self, datadir, preddir, model, dg_test, device, predicted_feature):
         self.datadir = datadir
         self.preddir = preddir
         self.model = model
         self.dg_test = dg_test
         self.device = device
+        self.pred_feature = predicted_feature
         model.eval()
 
     def evaluate(self):
@@ -73,16 +74,25 @@ class Evaluator:
         preds = preds * dg.std.values + dg.mean.values
         das = []
         lev_idx = 0
-
-        nlevs = 1
-        das.append(xr.DataArray(
-            preds[:, :, :, lev_idx:lev_idx+nlevs],
-            dims=['time', 'lat', 'lon', 'level'],
-            coords={'time': dg.valid_time[:1], 'lat': dg.ds.lat, 'lon': dg.ds.lon,
-                    'level': [levels]},
-            name=var
-        ))
-        lev_idx += nlevs
+        for var, levels in dg.var_dict.items():
+            if var == self.pred_feature:
+                if levels is None:
+                    das.append(xr.DataArray(
+                        preds[:, :, :, lev_idx],
+                        dims=['time', 'lat', 'lon'],
+                        coords={'time': dg.valid_time, 'lat': dg.ds.lat, 'lon': dg.ds.lon},
+                        name=var
+                    ))
+                else:
+                    print(preds.shape)
+                    das.append(xr.DataArray(
+                        preds[:, :, :, [lev_idx]],
+                        dims=['time', 'lat', 'lon', 'level'],
+                        coords={'time': dg.valid_time[:1], 'lat': dg.ds.lat, 'lon': dg.ds.lon,
+                                'level': [levels]},
+                        name=var
+                    ))
+            lev_idx += 1
         return xr.merge(das)
 
     def compute_weighted_rmse(self, da_fc, da_true, mean_dims=xr.ALL_DIMS):

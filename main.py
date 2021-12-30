@@ -113,6 +113,6 @@ if __name__ == '__main__':
     # evaluate on test set
     with torch.no_grad():
         preddir = args.predictions_path
-        evaluator = Evaluator(datadir, preddir, model, dg_test, device)
+        evaluator = Evaluator(datadir, preddir, model, dg_test, device, pred_feature)
         evaluator.evaluate()
         evaluator.print_sample()
