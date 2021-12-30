@@ -11,12 +11,14 @@ if __name__ == '__main__':
 
     parser.add_argument('--mode', default='train', help='train or test', choices=['train', 'val'])
     parser.add_argument('--model', default='linear', help='select model',
-                        choices=['register_your_model', 'linear', 'graph_wavenet'])
+                        choices=['register_your_model', 'linear', 'graph', 'graph_wavenet'])
     parser.add_argument('--data_path', default='./data', help='specify path to dataset')
     parser.add_argument('--predictions_path', default='.', help='specify where to store predictions')
 
     parser.add_argument('--train_start_year', type=int, default=2013, help='first year used for training')
     parser.add_argument('--train_end_year', type=int, default=2016, help='last year used for training')
+    parser.add_argument('--lead_time', type=int, default=3*24, help='time frame to predict')
+    parser.add_argument('--time_step', type=int, default=5*24, help='number of time steps used for training')
 
     parser.add_argument('--epochs', type=int, default=1, help='number of epochs to train')
     parser.add_argument('--batch_size', type=int, default=4, help='train batch size')
@@ -28,7 +30,7 @@ if __name__ == '__main__':
     train_start_year = max(args.train_start_year, 1979)
     train_end_year = min(args.train_end_year, 2016)
 
-    time_step = 5 * 24
+    time_step = args.time_step
     batch_size = args.batch_size  # 4
     # predict_feature = 'z' need to make this variable
 
@@ -38,9 +40,8 @@ if __name__ == '__main__':
     # ds = xr.merge([z, t], compat='override')  # Override level. discarded later anyway.
 
     dic = {'t': '850'}  # dic = {'z':'500', 't': '850'}
-    lead_time = 3 * 24  # (0 = next hour)  # 5 * 24
-    # train_years = ('1979', '2015')
-    train_years = (str(train_start_year), str(train_end_year))  # ('2013', '2016')
+    lead_time = args.lead_time  # (0 = next hour)  # 5 * 24
+    train_years = (str(train_start_year), str(train_end_year))  # ('1979', '2016')
     test_years = ('2017', '2018')
 
     ds_train = ds.sel(time=slice(*train_years))
