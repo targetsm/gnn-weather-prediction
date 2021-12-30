@@ -20,6 +20,9 @@ if __name__ == '__main__':
     parser.add_argument('--lead_time', type=int, default=3*24, help='time frame to predict')
     parser.add_argument('--time_step', type=int, default=5*24, help='number of time steps used for training')
 
+    parser.add_argument('--training_features', default='zt', help='features used for training', choices=['z', 't', 'zt'])
+    parser.add_argument('--predicted_feature', default='z', help='feature to predict', choices=['z', 't'])
+
     parser.add_argument('--epochs', type=int, default=1, help='number of epochs to train')
     parser.add_argument('--batch_size', type=int, default=4, help='train batch size')
 
@@ -35,11 +38,18 @@ if __name__ == '__main__':
     # predict_feature = 'z' need to make this variable
 
     datadir = args.data_path  # './data'
-    # z = xr.open_mfdataset(f'{datadir}/geopotential_500/*.nc', combine='by_coords')
-    ds = xr.open_mfdataset(f'{datadir}/temperature_850/*.nc', combine='by_coords')
-    # ds = xr.merge([z, t], compat='override')  # Override level. discarded later anyway.
+    training_features = args.training_features
+    pred_feature = args.predicted_feature
+    features = []
+    dic = dict()
+    if 'z' in training_features:
+        dic['z'] = '500'
+        features.append(xr.open_mfdataset(f'{datadir}/geopotential_500/*.nc', combine='by_coords'))
+    if 't' in training_features:
+        dic['t'] = '850'
+        features.append(xr.open_mfdataset(f'{datadir}/temperature_850/*.nc', combine='by_coords'))
+    ds = xr.merge(features, compat='override')  # Override level. discarded later anyway.
 
-    dic = {'t': '850'}  # dic = {'z':'500', 't': '850'}
     lead_time = args.lead_time  # (0 = next hour)  # 5 * 24
     train_years = (str(train_start_year), str(train_end_year))  # ('1979', '2016')
     test_years = ('2017', '2018')
@@ -47,9 +57,10 @@ if __name__ == '__main__':
     ds_train = ds.sel(time=slice(*train_years))
     ds_test = ds.sel(time=slice(*test_years))
 
-    dg_train = WeatherDataset(ds_train, dic, lead_time, time_steps=time_step, batch_size=batch_size)
+    dg_train = WeatherDataset(ds_train, dic, lead_time, time_steps=time_step, batch_size=batch_size,
+                              predicted_feature=pred_feature)
     dg_test = WeatherDataset(ds_test, dic, lead_time, time_steps=time_step, batch_size=ds_test.__len__(),
-                             mean=dg_train.mean, std=dg_train.std, shuffle=False, load=False)
+                             mean=dg_train.mean, std=dg_train.std, shuffle=False, load=False, predicted_feature=pred_feature)
 
     print(f'Mean = {dg_train.mean}; Std = {dg_train.std}')
 
@@ -84,7 +95,7 @@ if __name__ == '__main__':
             for i in range(dg_train.__len__()):
                 inputs, labels = dg_train.__getitem__(i)
                 inputs = inputs.to(device)
-                labels = labels[:, :, :, :, [0]].to(device)
+                labels = labels.to(device)
 
                 optimizer.zero_grad()
 

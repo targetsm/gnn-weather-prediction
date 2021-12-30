@@ -73,25 +73,16 @@ class Evaluator:
         preds = preds * dg.std.values + dg.mean.values
         das = []
         lev_idx = 0
-        for var, levels in dg.var_dict.items():
-            if levels is None:
-                das.append(xr.DataArray(
-                    preds[:, :, :, lev_idx],
-                    dims=['time', 'lat', 'lon'],
-                    coords={'time': dg.valid_time, 'lat': dg.ds.lat, 'lon': dg.ds.lon},
-                    name=var
-                ))
-                lev_idx += 1
-            else:
-                nlevs = len(levels)
-                das.append(xr.DataArray(
-                    preds[:, :, :, lev_idx:lev_idx+nlevs],
-                    dims=['time', 'lat', 'lon', 'level'],
-                    coords={'time': dg.valid_time[:1], 'lat': dg.ds.lat, 'lon': dg.ds.lon,
-                            'level': [levels]},
-                    name=var
-                ))
-                lev_idx += nlevs
+
+        nlevs = 1
+        das.append(xr.DataArray(
+            preds[:, :, :, lev_idx:lev_idx+nlevs],
+            dims=['time', 'lat', 'lon', 'level'],
+            coords={'time': dg.valid_time[:1], 'lat': dg.ds.lat, 'lon': dg.ds.lon,
+                    'level': [levels]},
+            name=var
+        ))
+        lev_idx += nlevs
         return xr.merge(das)
 
     def compute_weighted_rmse(self, da_fc, da_true, mean_dims=xr.ALL_DIMS):
