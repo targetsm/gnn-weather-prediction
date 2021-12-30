@@ -2,7 +2,19 @@ import xarray as xr
 from dataloader import WeatherDataset
 # from models.model import CustomModule
 from models.GAN import CustomModule, GAT
-from evaluation import Evaluator
+from evaluation import Evaluator, Graph_Model_Evaluator
+import torch
+from geometry_GNN import build_cube_edges
+import os
+import numpy as np
+import matplotlib.pyplot as plt
+
+
+import xarray as xr
+from dataloader import WeatherDataset
+# from models.model import CustomModule
+from models.GAN import CustomModule, GAT
+from evaluation import Evaluator, Graph_Model_Evaluator
 import torch
 from geometry_GNN import build_cube_edges
 import os
@@ -12,10 +24,9 @@ import matplotlib.pyplot as plt
 
 if __name__ == '__main__':
 
-    # device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')    
-    device = 'cpu'
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')    
 
-    time_step = 10
+    time_step = 1
     batch_size = 4
     save_and_load_edges = False
     #predict_feature = 'z' need to make this variable
@@ -65,35 +76,42 @@ if __name__ == '__main__':
     model = GAT(num_features=1, num_vertices=32*64*time_step, batch_size=batch_size)
     # model = CustomModule()
 
-    num_epochs = 5
-    learning_rate = 1e-6
+    num_epochs = 50
+    learning_rate = 1e-5
     criterion = torch.nn.MSELoss(reduction='sum')
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 
+    # optimizer = torch.optim.SGD(model.parameters(), lr=0.008, momentum=0.5, weight_decay=0.0001853649179441988)
+    lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, num_epochs)
+
     model.to(device)
 
+    log_size = 1000
+
     for epoch in range(num_epochs):
-        for i, data in enumerate(dg_train):
-            inputs, labels = data
-            labels = labels[:,:,:,:,[0]]
+        losses = []
+        for i in range(len(dg_train)):
+            inputs, labels = dg_train.__getitem__(i)
+            labels = labels[:,:,:,:,[0]].to(device)
 
             optimizer.zero_grad()
             # outputs = model(inputs.to(device), labels.to(device))
             outputs = model(inputs.to(device), edge_index.to(device))
 
             loss = criterion(outputs, labels)
+            losses.append(loss.item()/batch_size)
             loss.backward()
             optimizer.step()
-            if i%5 == 0: # every 100th, print
-                print('[%d, %5d] loss: %.3f' %
-                    (epoch + 1, i + 1, loss.item()/batch_size))
-
+            # lr_scheduler.step()
+            if i%log_size == 0:      
+                print('[%d, %5d] average training loss: %.3f' %
+                    (epoch + 1, i + 1, np.mean(losses)))
+                losses = []
 
     print('Finished Training')
 
     # evaluate on test set
-    evaluator = Evaluator(datadir, model, dg_test)
+    preddir ='.'
+    evaluator = Graph_Model_Evaluator(datadir, preddir, model, dg_test, edge_index, device)
     evaluator.evaluate()
     evaluator.print_sample()
-
-

@@ -40,19 +40,29 @@ class WeatherDataset(Dataset):
         # For some weird reason calling .load() earlier messes up the mean and std computations
         if load: print('Loading data into RAM'); self.data.load()
 
+
     def __len__(self):
         'Denotes the number of batches per epoch'
-        return int(np.floor((self.n_samples - self.time_steps - self.lead_time) / (self.batch_size)))
+        return int(np.floor((self.n_samples - self.time_steps - self.lead_time) / (self.batch_size))) - 1
+
+    # def __remove__(self):
+
 
     def __getitem__(self, i):
         'Generate one batch of data'
-        idxs = self.idxs[i * self.batch_size: (i + 1) * self.batch_size]
+        lower_index = self.idxs.shape[0] - self.idxs.shape[0]%self.batch_size
+        self.idxs = np.delete(self.idxs, np.where(self.idxs >= lower_index)) # remove excess indices which would spillover into a new batch
+        if i >= 0:
+            idxs = self.idxs[i * self.batch_size: (i + 1) * self.batch_size]
+        else:
+            idxs = self.idxs[i * self.batch_size - 1: (i+1) * self.batch_size - 1] # case for negative indexing, shouldn't happen
         x_li = [self.data.isel(time=idxs + j).values for j in range(self.time_steps)]
         # X = self.data.isel(time=idxs).values
         y = self.data.isel(time=idxs + self.time_steps + self.lead_time - 1).values
         X = torch.from_numpy(np.stack(x_li, axis=1))
         y = torch.from_numpy(np.expand_dims(y, axis=1))
         return X, y
+
 
     def on_epoch_end(self):
         'Updates indexes after each epoch'
