@@ -80,15 +80,9 @@ if __name__ == '__main__':
     if model_name == 'linear':
         model = LinearModel(device).to(device)
         optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
-        if mode == 'test':
-            # load your model here in case of only testing
-            pass
     elif model_name == 'graph':
         model = GraphModel(device).to(device)
         optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
-        if mode == 'test':
-            # load your model here in case of only testing
-            pass
     elif model_name == 'graph_wavenet':
         pass
     else:
@@ -130,9 +124,58 @@ if __name__ == '__main__':
             }, model_save_fn)
         print('Finished Training')
 
-    # evaluate on test set
     with torch.no_grad():
+        # prediction
         preddir = args.predictions_path
+        """Perform evaluation on the test set"""
+        pred_save_fn = f'{preddir}/predictions'
+
+        # Create predictions
+
+        pred = []
+        for i in range(dg_test.__len__()):
+            inputs, labels = dg_train.__getitem__(i)
+            inputs = inputs.to(device)
+            labels = labels.to(device)
+
+            outputs = model(inputs, labels)
+            pred.append(outputs)
+            print(i,dg_test.__len__())
+            if i == 100: break
+
+        pred = torch.cat(pred)
+
+        preds = pred * dg_test.std.values + dg_test.mean.values
+        das = []
+        lev_idx = 0
+        preds = preds.squeeze()
+        for var, levels in dg_test.var_dict.items():
+            if var == pred_feature:
+                if levels is None:
+                    das.append(xr.DataArray(
+                        preds[:, :, :, lev_idx],
+                        dims=['time', 'lat', 'lon'],
+                        coords={'time': dg_test.valid_time, 'lat': dg_test.ds.lat, 'lon': dg_test.ds.lon},
+                        name=var
+                    ))
+                else:
+                    print(preds.shape)
+                    das.append(xr.DataArray(
+                        preds[:, :, :, [lev_idx]],
+                        dims=['time', 'lat', 'lon', 'level'],
+                        coords={'time': dg_test.valid_time[:preds.size(0)], 'lat': dg_test.ds.lat, 'lon': dg_test.ds.lon,
+                                'level': [levels]},
+                        name=var
+                    ))
+            lev_idx += 1
+        pred = xr.merge(das)
+
+        print(f'Saving predictions: {pred_save_fn}')
+        pred.to_netcdf(pred_save_fn)
+
+        # compute score
         evaluator = Evaluator(datadir, preddir, model, dg_test, device, pred_feature)
-        evaluator.evaluate()
+
+        valid = evaluator.load_test_data(f'{datadir}/temperature_850', 't')
+        print('RMSE:', evaluator.compute_weighted_rmse(pred, valid).load().to_array().values)
         evaluator.print_sample()
