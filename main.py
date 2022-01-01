@@ -3,8 +3,10 @@ import argparse
 from dataloader import WeatherDataset
 from models.lin_model import LinearModel
 from models.graph_model import GraphModel
+from models.model import CustomModule
 from evaluation import Evaluator
 import torch
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Pass arguments to weather prediction framework')
@@ -85,6 +87,9 @@ if __name__ == '__main__':
         optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
     elif model_name == 'graph_wavenet':
         pass
+    elif model_name == 'custom_module':
+        model = CustomModule(device).to(device)
+        optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
     else:
         pass
 
@@ -113,7 +118,7 @@ if __name__ == '__main__':
 
                 print('[%d, %5d] loss: %.3f' %
                       (epoch + 1, i + 1, loss.item() / batch_size))
-                if i == 10: break
+
             model_save_fn = f'{args.model_path}/{model_name}_{epoch+1}.pt'
             print("Saving model:", model_save_fn)
             torch.save({
@@ -122,60 +127,19 @@ if __name__ == '__main__':
                 'optimizer_state_dict': optimizer.state_dict(),
                 'loss': loss
             }, model_save_fn)
+
         print('Finished Training')
+        with torch.no_grad():
+            evaluator = Evaluator(datadir, args.predictions_path, model, dg_test, device, pred_feature)
+            preds, true = evaluator.create_predictions(partial=True)
+            evaluator.evaluate(preds, true, plot=True)
 
-    with torch.no_grad():
-        # prediction
-        preddir = args.predictions_path
-        """Perform evaluation on the test set"""
-        pred_save_fn = f'{preddir}/predictions'
+    if mode == 'val':
+        if not args.load_checkpoint:
+            raise AttributeError("No checkpoint specified for testing")
+        with torch.no_grad():
+            evaluator = Evaluator(datadir, args.predictions_path, model, dg_test, device, pred_feature)
+            preds, true = evaluator.create_predictions()
+            evaluator.evaluate(preds, true)
 
-        # Create predictions
 
-        pred = []
-        for i in range(dg_test.__len__()):
-            inputs, labels = dg_train.__getitem__(i)
-            inputs = inputs.to(device)
-            labels = labels.to(device)
-
-            outputs = model(inputs, labels)
-            pred.append(outputs)
-            print(i,dg_test.__len__())
-            if i == 100: break
-
-        pred = torch.cat(pred)
-
-        preds = pred * dg_test.std.values + dg_test.mean.values
-        das = []
-        lev_idx = 0
-        preds = preds.squeeze()
-        for var, levels in dg_test.var_dict.items():
-            if var == pred_feature:
-                if levels is None:
-                    das.append(xr.DataArray(
-                        preds[:, :, :, lev_idx],
-                        dims=['time', 'lat', 'lon'],
-                        coords={'time': dg_test.valid_time, 'lat': dg_test.ds.lat, 'lon': dg_test.ds.lon},
-                        name=var
-                    ))
-                else:
-                    print(preds.shape)
-                    das.append(xr.DataArray(
-                        preds[:, :, :, [lev_idx]],
-                        dims=['time', 'lat', 'lon', 'level'],
-                        coords={'time': dg_test.valid_time[:preds.size(0)], 'lat': dg_test.ds.lat, 'lon': dg_test.ds.lon,
-                                'level': [levels]},
-                        name=var
-                    ))
-            lev_idx += 1
-        pred = xr.merge(das)
-
-        print(f'Saving predictions: {pred_save_fn}')
-        pred.to_netcdf(pred_save_fn)
-
-        # compute score
-        evaluator = Evaluator(datadir, preddir, model, dg_test, device, pred_feature)
-
-        valid = evaluator.load_test_data(f'{datadir}/temperature_850', 't')
-        print('RMSE:', evaluator.compute_weighted_rmse(pred, valid).load().to_array().values)
-        evaluator.print_sample()
