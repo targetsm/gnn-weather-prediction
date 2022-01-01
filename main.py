@@ -14,6 +14,7 @@ if __name__ == '__main__':
                         choices=['register_your_model', 'linear', 'graph', 'graph_wavenet'])
     parser.add_argument('--data_path', default='./data', help='specify path to dataset')
     parser.add_argument('--predictions_path', default='.', help='specify where to store predictions')
+    parser.add_argument('--model_path', default='./tmp', help='specify where to store models')
 
     parser.add_argument('--train_start_year', type=int, default=2013, help='first year used for training')
     parser.add_argument('--train_end_year', type=int, default=2016, help='last year used for training')
@@ -25,6 +26,8 @@ if __name__ == '__main__':
 
     parser.add_argument('--epochs', type=int, default=1, help='number of epochs to train')
     parser.add_argument('--batch_size', type=int, default=4, help='train batch size')
+
+    parser.add_argument('--load_checkpoint', default=None, help='use model checkpoint')
 
     args = parser.parse_args()
     print(args)
@@ -68,6 +71,7 @@ if __name__ == '__main__':
     print(f"Using {device} device")
     model = None
 
+    start_epoch = 0
     num_epochs = args.epochs  # 1
     learning_rate = 1e-6
     criterion = torch.nn.MSELoss(reduction='sum')
@@ -90,8 +94,16 @@ if __name__ == '__main__':
     else:
         pass
 
+    if args.load_checkpoint:
+        checkpoint = torch.load(f'{args.model_path}/{args.load_checkpoint}')
+        print('Loaded Checkpoint:', checkpoint)
+        model.load_state_dict(checkpoint['model_state_dict'])
+        optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+        start_epoch = checkpoint['epoch'] + 1
+        loss = checkpoint['loss']
+
     if mode == 'train':
-        for epoch in range(num_epochs):
+        for epoch in range(start_epoch, num_epochs):
             for i in range(dg_train.__len__()):
                 inputs, labels = dg_train.__getitem__(i)
                 inputs = inputs.to(device)
@@ -107,7 +119,15 @@ if __name__ == '__main__':
 
                 print('[%d, %5d] loss: %.3f' %
                       (epoch + 1, i + 1, loss.item() / batch_size))
-
+                if i == 10: break
+            model_save_fn = f'{args.model_path}/{model_name}_{epoch+1}.pt'
+            print("Saving model:", model_save_fn)
+            torch.save({
+                'epoch': epoch,
+                'model_state_dict': model.state_dict(),
+                'optimizer_state_dict': optimizer.state_dict(),
+                'loss': loss
+            }, model_save_fn)
         print('Finished Training')
 
     # evaluate on test set
