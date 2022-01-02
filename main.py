@@ -64,7 +64,7 @@ if __name__ == '__main__':
 
     dg_train = WeatherDataset(ds_train, dic, lead_time, time_steps=time_step, batch_size=batch_size,
                               predicted_feature=pred_feature)
-    dg_test = WeatherDataset(ds_test, dic, lead_time, time_steps=time_step, batch_size=ds_test.__len__(),
+    dg_test = WeatherDataset(ds_test, dic, lead_time, time_steps=time_step, batch_size=batch_size,
                              mean=dg_train.mean, std=dg_train.std, shuffle=False, load=False, predicted_feature=pred_feature)
 
     print(f'Mean = {dg_train.mean}; Std = {dg_train.std}')
