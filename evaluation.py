@@ -79,17 +79,15 @@ class Evaluator:
             print(i, self.dg_test.__len__())
             if partial and i == 10:
                 break
-
         pred = torch.cat(pred)
         true = torch.cat(true)
 
-        preds = pred * self.dg_test.std.values + self.dg_test.mean.values
+        preds = pred.to('cpu') * self.dg_test.std.values + self.dg_test.mean.values
         das = []
         lev_idx = 0
-        preds = preds.squeeze()
+        preds = preds.squeeze(axis=1)
         for var, levels in self.dg_test.var_dict.items():
             if var == self.pred_feature:
-                print(preds.shape)
                 das.append(xr.DataArray(
                     preds[:, :, :, [lev_idx]],
                     dims=['time', 'lat', 'lon', 'level'],
@@ -101,10 +99,10 @@ class Evaluator:
             lev_idx += 1
         pred = xr.merge(das)
 
-        preds = true * self.dg_test.std.values + self.dg_test.mean.values
+        preds = true.to('cpu') * self.dg_test.std.values + self.dg_test.mean.values
         das = []
         lev_idx = 0
-        preds = preds.squeeze()
+        preds = preds.squeeze(axis=1)
         for var, levels in self.dg_test.var_dict.items():
             if var == self.pred_feature:
                 print(preds.shape)

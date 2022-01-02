@@ -94,7 +94,7 @@ if __name__ == '__main__':
         pass
 
     if args.load_checkpoint:
-        checkpoint = torch.load(f'{args.model_path}/{args.load_checkpoint}')
+        checkpoint = torch.load(f'{args.model_path}/{args.load_checkpoint}', map_location=device)
         print('Loaded Checkpoint:', checkpoint)
         model.load_state_dict(checkpoint['model_state_dict'])
         optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
