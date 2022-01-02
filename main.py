@@ -2,9 +2,10 @@ import xarray as xr
 import argparse
 from dataloader import WeatherDataset
 from models.lin_model import LinearModel
-from models.graph_model import GraphModel
+#from models.graph_model import GraphModel
 from models.model import CustomModule
 from evaluation import Evaluator
+from models.graph_wavenet import gwnet
 import torch
 
 
@@ -82,11 +83,17 @@ if __name__ == '__main__':
     if model_name == 'linear':
         model = LinearModel(device).to(device)
         optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
-    elif model_name == 'graph':
-        model = GraphModel(device).to(device)
-        optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
+    #elif model_name == 'graph':
+    #    model = GraphModel(device).to(device)
+    #    optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
     elif model_name == 'graph_wavenet':
-        pass
+        model = gwnet(device, 32 * 64 * 1, dropout=0.3, supports=None, gcn_bool=True,
+                      addaptadj=True, aptinit=None,
+                      in_dim=1, out_dim=1, residual_channels=32, dilation_channels=32,
+                      skip_channels=256,
+                      end_channels=512,
+                      kernel_size=2, blocks=4, layers=2)
+        optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
     elif model_name == 'custom_module':
         model = CustomModule(device).to(device)
         optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
