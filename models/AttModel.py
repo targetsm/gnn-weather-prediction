@@ -10,17 +10,19 @@ import numpy as np
 
 class AttModel(Module):
 
-    def __init__(self, in_features=128*2, kernel_size=10, d_model=512, num_stage=2, dct_n=10):
+    def __init__(self, in_features=2048, kernel_size=10, d_model=512, num_stage=2, dct_n=10):
         super(AttModel, self).__init__()
+        in_features = 256
+        kernel_size = 10  # M
+        num_stage = 2
+        dct_n = 10
+        d_model = 128
 
         self.kernel_size = kernel_size
         self.d_model = d_model
-        # self.seq_in = seq_in
         self.dct_n = dct_n
-        # ks = int((kernel_size + 1) / 2)
-        assert kernel_size == 10
 
-        '''self.convQ = nn.Sequential(nn.Conv1d(in_channels=in_features, out_channels=d_model, kernel_size=6,
+        self.convQ = nn.Sequential(nn.Conv1d(in_channels=in_features, out_channels=d_model, kernel_size=6,
                                              bias=False),
                                    nn.ReLU(),
                                    nn.Conv1d(in_channels=d_model, out_channels=d_model, kernel_size=5,
@@ -32,15 +34,32 @@ class AttModel(Module):
                                    nn.ReLU(),
                                    nn.Conv1d(in_channels=d_model, out_channels=d_model, kernel_size=5,
                                              bias=False),
-                                   nn.ReLU())'''
+                                   nn.ReLU())
 
-        self.gcn = GCN(input_feature=120, hidden_feature=d_model, p_dropout=0.3,
+        self.gcn = GCN(input_feature=(dct_n) * 2, hidden_feature=512, p_dropout=0.3,
                            num_stage=num_stage,
                            node_n=in_features)
-        self.linear = torch.nn.Linear(2048, 128*2)
-        self.back = torch.nn.Linear(128*2, 2048)
 
-    def forward(self, src, labels):
+        self.multihead_attn = nn.MultiheadAttention(self.d_model, 16)
+
+        self.ff_nn = nn.Sequential(
+            nn.Linear(in_features=(in_features*dct_n), out_features=256),
+            nn.ReLU(),
+            nn.Linear(in_features=256, out_features=d_model),
+            nn.ReLU(),
+        )
+
+        self.rev_ff_nn = nn.Sequential(
+            nn.Linear(in_features=d_model, out_features=256),
+            nn.ReLU(),
+            nn.Linear(in_features=256, out_features=(in_features*dct_n)),
+            nn.ReLU(),
+        )
+
+        self.encode = nn.Linear(2048, in_features)
+        self.decode = nn.Linear(in_features, 2048)
+
+    def forward2(self, src, labels):
         #reshape source to shape 1X2048
         tmp = self.linear(src.reshape(src.shape[0], src.shape[1], -1))
         tmp = tmp.transpose(1,2)
@@ -49,32 +68,34 @@ class AttModel(Module):
         out = self.back(out.transpose(1,2))
         return out[:,-1].reshape(labels.shape)
 
-    def forward2(self, batch):
+    def forward(self, batch, lables):
         """
         The forward pass.
         :param batch: Current batch of data.
         :return: Each forward pass must return a dictionary with keys {'seed', 'predictions'}.
         """
-        batch_size = batch[0]
+        batch_size = batch.shape[0]
         src = batch
-        output_n = 1  # number of output frames T
-        input_n = 120  # number of input frames N
+        output_n = 72  # number of output frames T
+        input_n = batch.shape[1] # number of input frames N
 
         dct_n = self.dct_n
-        src = src[:, :input_n]  # [bs,in_n,dim]
+        src = src.reshape((batch_size, input_n, 2048))  # [bs,in_n,dim]
+        src = self.encode(src)
         src_tmp = src.clone()
         bs = src.shape[0]
         src_key_tmp = src_tmp.transpose(1, 2)[:, :, :(input_n - output_n)].clone()
         src_query_tmp = src_tmp.transpose(1, 2)[:, :, -self.kernel_size:].clone()
 
         dct_m, idct_m = util.get_dct_matrix(self.kernel_size + output_n)
-        dct_m = torch.from_numpy(dct_m).float().cuda()
-        idct_m = torch.from_numpy(idct_m).float().cuda()
+        dct_m = torch.from_numpy(dct_m).float()
+        idct_m = torch.from_numpy(idct_m).float()
 
         vn = input_n - self.kernel_size - output_n + 1
         vl = self.kernel_size + output_n
         idx = np.expand_dims(np.arange(vl), axis=0) + \
               np.expand_dims(np.arange(vn), axis=1)
+        #print(idx)
         src_value_tmp = src_tmp[:, idx].clone().reshape(
             [bs * vn, vl, -1])
         src_value_tmp = torch.matmul(dct_m[:dct_n].unsqueeze(dim=0), src_value_tmp).reshape(
@@ -94,10 +115,12 @@ class AttModel(Module):
         af_ff_out = self.rev_ff_nn(mh_attn_out).transpose(0, 1).reshape(batch_size, -1, dct_n)
 
         input_gcn = src_tmp[:, idx]  # shape:[16, 34, 135]
-
+        #print(dct_m[:dct_n].unsqueeze(dim=0).shape)
         dct_in_tmp = torch.matmul(dct_m[:dct_n].unsqueeze(dim=0), input_gcn).transpose(1, 2)
 
         dct_in_tmp = torch.cat([dct_in_tmp, af_ff_out], dim=-1)
+        #print(dct_in_tmp.shape)
+
 
         dct_out_tmp = self.gcn(dct_in_tmp)
         out_gcn = torch.matmul(idct_m[:, :dct_n].unsqueeze(dim=0),
@@ -108,7 +131,9 @@ class AttModel(Module):
 
         out_sq = outputs.squeeze()
         out_sq = out_sq[:, -1:, :]
-        return out_sq.reshape(batch_size, self.config.target_seq_len, -1)
+        out_sq = self.decode(out_sq)
+        #print(out_sq.shape)
+        return out_sq.reshape(lables.shape)
 
 
     '''def forward_old(self, src, output_n=25, input_n=50, itera=1):
