@@ -5,6 +5,7 @@ from models.simple import LinearModel
 from models.simple2 import SimpleModel2
 from models.graph_model import GraphModel
 from models.model import CustomModule
+from models.AttModel import AttModel
 from evaluation import Evaluator
 import torch
 
@@ -14,7 +15,7 @@ if __name__ == '__main__':
 
     parser.add_argument('--mode', default='train', help='train or test', choices=['train', 'val'])
     parser.add_argument('--model', default='linear', help='select model',
-                        choices=['register_your_model', 'linear', 'graph', 'graph_wavenet', 'simple', 'simple2'])
+                        choices=['register_your_model', 'linear', 'graph', 'graph_wavenet', 'simple', 'simple2', 'attention'])
     parser.add_argument('--data_path', default='./data', help='specify path to dataset')
     parser.add_argument('--predictions_path', default='.', help='specify where to store predictions')
     parser.add_argument('--model_path', default='./tmp', help='specify where to store models')
@@ -97,6 +98,10 @@ if __name__ == '__main__':
     elif model_name == 'simple2':
         model = SimpleModel2(device).to(device)
         optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
+    elif model_name == 'attention':
+        model = AttModel().to(device)
+        optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
+
 
     if args.load_checkpoint:
         checkpoint = torch.load(f'{args.model_path}/{args.load_checkpoint}', map_location=device)
