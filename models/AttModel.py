@@ -10,14 +10,14 @@ import numpy as np
 
 class AttModel(Module):
 
-    def __init__(self, in_features=2048, kernel_size=10, d_model=512, num_stage=2, dct_n=10):
+    def __init__(self, device):
         super(AttModel, self).__init__()
         in_features = 256
         kernel_size = 10  # M
         num_stage = 2
         dct_n = 10
         d_model = 128
-
+        self.device = device
         self.kernel_size = kernel_size
         self.d_model = d_model
         self.dct_n = dct_n
@@ -88,8 +88,8 @@ class AttModel(Module):
         src_query_tmp = src_tmp.transpose(1, 2)[:, :, -self.kernel_size:].clone()
 
         dct_m, idct_m = util.get_dct_matrix(self.kernel_size + output_n)
-        dct_m = torch.from_numpy(dct_m).float()
-        idct_m = torch.from_numpy(idct_m).float()
+        dct_m = torch.from_numpy(dct_m).float().to(self.device)
+        idct_m = torch.from_numpy(idct_m).float().to(self.device)
 
         vn = input_n - self.kernel_size - output_n + 1
         vl = self.kernel_size + output_n

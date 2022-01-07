@@ -99,7 +99,7 @@ if __name__ == '__main__':
         model = SimpleModel2(device).to(device)
         optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
     elif model_name == 'attention':
-        model = AttModel().to(device)
+        model = AttModel(device).to(device)
         optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 
 
