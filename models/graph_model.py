@@ -15,8 +15,13 @@ class GraphModel(torch.nn.Module):
         output = []
         for x in batch:
             edge_index, pos = grid(x.shape[1], x.shape[2], device=self.device)
+            print(x.shape)
             x = x.moveaxis(0, 2)
+            print(x.shape)
             x = x.reshape((x.shape[0]*x.shape[1], x.shape[2]*x.shape[3]))
+            print(x.shape)
             out = self.conv(x, edge_index)
+            print(out.shape)
+            quit()
             output.append(out.reshape(output_shape))
         return torch.stack(output)

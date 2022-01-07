@@ -16,12 +16,12 @@ class Evaluator:
         dg_test.data.load()
         model.eval()
 
-    def evaluate(self, pred, valid, plot=False):
+    def evaluate(self, pred, valid, plot=False, path='tmp.png'):
         """Perform evaluation on the test set"""
         # Print score in real units
         print('RMSE:',self.compute_weighted_rmse(pred, valid).load().to_array().values)
         if plot:
-            self.print_sample()
+            self.print_sample(path)
 
     def create_iterative_predictions(self, model, dg, max_lead_time=5 * 24):
         """Create iterative predictions"""
@@ -141,7 +141,7 @@ class Evaluator:
         rmse = np.sqrt(((error)**2 * weights_lat).mean(mean_dims))
         return rmse
 
-    def print_sample(self):
+    def print_sample(self, path):
         """Plot sample comparison"""
         x_test, y_test = next(iter(self.dg_test))
         y_test = y_test[:, :, :, :, [0]].to(self.device)
@@ -149,6 +149,10 @@ class Evaluator:
         prediction = self.model(x_test, y_test).cpu()
 
         plt.imshow(prediction[-1, -1])
+        plt.savefig(f'{path}_prediction.png', dpi=100)
         plt.show()
+
         plt.imshow(y_test[-1, -1].cpu())
+        plt.savefig(f'{path}_true.png', dpi=100)
         plt.show()
+
