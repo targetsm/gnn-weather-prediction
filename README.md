@@ -1,12 +1,7 @@
-# DL Project
+Running the training:
 
-Our awesome Project :D
+python main.py
 
----
+Running the evaluation:
 
-Modules for gpu use on euler:
-
-```
-env2lmod 
-module load gcc/8.2.0 python_gpu/3.9.9
-```
+python main.py --load_checkpoint attention_10.pt --mode val
