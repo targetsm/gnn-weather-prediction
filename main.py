@@ -14,21 +14,21 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Pass arguments to weather prediction framework')
 
     parser.add_argument('--mode', default='train', help='train or test', choices=['train', 'val'])
-    parser.add_argument('--model', default='linear', help='select model',
+    parser.add_argument('--model', default='attention', help='select model',
                         choices=['register_your_model', 'linear', 'graph', 'graph_wavenet', 'simple', 'simple2', 'attention'])
     parser.add_argument('--data_path', default='./data', help='specify path to dataset')
     parser.add_argument('--predictions_path', default='.', help='specify where to store predictions')
     parser.add_argument('--model_path', default='./tmp', help='specify where to store models')
 
-    parser.add_argument('--train_start_year', type=int, default=2013, help='first year used for training')
+    parser.add_argument('--train_start_year', type=int, default=1979, help='first year used for training')
     parser.add_argument('--train_end_year', type=int, default=2016, help='last year used for training')
     parser.add_argument('--lead_time', type=int, default=3*24, help='time frame to predict')
-    parser.add_argument('--time_step', type=int, default=12, help='number of time steps used for training')
+    parser.add_argument('--time_step', type=int, default=120, help='number of time steps used for training')
 
     parser.add_argument('--training_features', default='t', help='features used for training', choices=['z', 't', 'zt'])
     parser.add_argument('--predicted_feature', default='t', help='feature to predict', choices=['z', 't'])
 
-    parser.add_argument('--epochs', type=int, default=1, help='number of epochs to train')
+    parser.add_argument('--epochs', type=int, default=10, help='number of epochs to train')
     parser.add_argument('--batch_size', type=int, default=4, help='train batch size')
 
     parser.add_argument('--load_checkpoint', default=None, help='use model checkpoint')
