@@ -130,9 +130,32 @@ class AttModel(Module):
         outputs = torch.cat(outputs, dim=2)
 
         out_sq = outputs.squeeze()
+        output_print = out_sq
         out_sq = out_sq[:, -1:, :]
         out_sq = self.decode(out_sq)
         #print(out_sq.shape)
+        
+        import matplotlib.pyplot as plt
+        import matplotlib.cm as cm
+        import matplotlib.animation as animation
+
+        #img = self.decode(output_print).detach().numpy()
+        #print(img.shape)
+        frames = []  # for storing the generated images
+        fig = plt.figure()
+        img = torch.cat((src[:, -72:], output_print[:,10:]), 1)
+        img = self.decode(img).detach().numpy()
+        for i in range(72+72):
+            frames.append([plt.imshow(img[:, i].reshape(lables.shape)[2].squeeze(), animated=True), plt.text(0.1,0.1,'time={}'.format(i-71), animated=True, fontsize=14, transform=plt.gcf().transFigure)])
+            if i == 72+71:
+                for j in range(50):
+                    frames.append([plt.imshow(img[:, i].reshape(lables.shape)[2].squeeze(), animated=True), plt.text(0.1,0.1,'time={}'.format(i-71), animated=True, fontsize=14, transform=plt.gcf().transFigure)])
+        ani = animation.ArtistAnimation(fig, frames, interval=100, blit=True,
+                                        repeat_delay=10000)
+         
+        ani.save('movie.gif')
+        exit()
+        plt.show()
         return out_sq.reshape(lables.shape)
 
 
