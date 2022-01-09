@@ -8,4 +8,4 @@ Running the evaluation:
 
 ---
 
-This model inherently creates a iterative prediction. We have composed a video of the predicted frames in movie.gif.[](movie.gif)
+This model inherently creates a iterative prediction. We have composed a video of the predicted frames in [movie.gif](movie.gif)
