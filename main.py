@@ -1,32 +1,19 @@
 import xarray as xr
-from dataloader import WeatherDataset
-# from models.model import CustomModule
-from models.GAN import CustomModule, GAT
-from evaluation import Evaluator, Graph_Model_Evaluator
-import torch
-from geometry_GNN import build_cube_edges
 import os
 import numpy as np
-import matplotlib.pyplot as plt
-
-
-import xarray as xr
 from dataloader import WeatherDataset
-# from models.model import CustomModule
-from models.GAN import CustomModule, GAT
-from evaluation import Evaluator, Graph_Model_Evaluator
+from models.GAN import GAT
+from evaluation import Graph_Model_Evaluator
 import torch
 from geometry_GNN import build_cube_edges
-import os
-import numpy as np
-import matplotlib.pyplot as plt
+
 
 
 if __name__ == '__main__':
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')    
 
-    time_step = 1
+    time_step = 12
     batch_size = 4
     save_and_load_edges = False
     #predict_feature = 'z' need to make this variable
@@ -69,14 +56,15 @@ if __name__ == '__main__':
                 width=64, height=32, depth=time_step, mode="8_neighbors", connect_time_steps="nearest"
             )
 
-    edge_index_extended = torch.tensor(edge_index).repeat(4, 1).T.contiguous()
+    edge_index_extended = torch.tensor(edge_index).repeat(batch_size, 1).T.contiguous()
     edge_index_addon = torch.repeat_interleave(torch.tensor([i*(time_step*32*64) for i in range(batch_size)]), len(edge_index)).repeat(2, 1)
+    print(edge_index_extended.shape, edge_index_addon.shape)
     edge_index = edge_index_extended + edge_index_addon
 
     model = GAT(num_features=1, num_vertices=32*64*time_step, batch_size=batch_size)
     # model = CustomModule()
 
-    num_epochs = 50
+    num_epochs = 10
     learning_rate = 1e-5
     criterion = torch.nn.MSELoss(reduction='sum')
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
