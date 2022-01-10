@@ -113,7 +113,7 @@ if __name__ == '__main__':
 
     elif model_name == 'g_wavenet':
         model = GraphWavenetModel(input_size=(time_step, 32, 64, len(features),),
-                                  num_filters=time_step * 128 * len(features),
+                                  num_filters=time_step * 64 * len(features),
                                   kernel_size=(1, 1, 2), num_residual_blocks=int(math.log(time_step, 2)) - 1,
                                   device=device).to(device)
         optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
