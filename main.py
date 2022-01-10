@@ -18,7 +18,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Pass arguments to weather prediction framework')
 
     parser.add_argument('--mode', default='train', help='train or test', choices=['train', 'val'])
-    parser.add_argument('--model', default='g_wavenet', help='select model',
+    parser.add_argument('--model', default='wavenet', help='select model',
                         choices=['register_your_model', 'linear', 'graph', 'graph_wavenet', 'wavenet', 'g_wavenet',
                                  'bfgraph_model'])
     parser.add_argument('--data_path', default='./data', help='specify path to dataset')
