@@ -163,7 +163,7 @@ if __name__ == '__main__':
                         evaluator = Evaluator(datadir, args.predictions_path, model, dg_test, device, pred_feature)
                         preds, true = evaluator.create_predictions(partial=True)
                         evaluator.evaluate(preds, true, plot=True,
-                                           path=f'{args.model_path}/{model_name}_{epoch + 1}_{i}')
+                                           path=f'{args.model_path}/{model_name}_epoch_{epoch + 1}_batch_{i}')
                     model_save_fn = f'{args.model_path}/{model_name}_{epoch + 1}_{i}.pt'
                     torch.save({
                         'epoch': epoch,
