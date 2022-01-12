@@ -1,3 +1,12 @@
 # DL Project
 
-To run our code please download the dataset following the instructions provided on the [WeatherBench](https://github.com/pangeo-data/WeatherBench) github. We use only the 5.625deg version. The branches that start with hand_in_ are the final version of the respective model and you only need to pass the location of the dataset on your machine (make sure it is unzipped correctly) and the network will start training. If you run into memory issues please reduce the number of batches.
+Instructions to reproduce our results:
+
+- Chose a model from the list of branches. The branches that start with hand_in_ are the final version of the respective model.
+- Download the dataset following the instructions provided on the [WeatherBench](https://github.com/pangeo-data/WeatherBench) github. We use only the 5.625deg version and only the temperature at 850 hPa.
+A possible command would be:
+```wget "https://dataserv.ub.tum.de/s/m1524895/download?path=%2F5.625deg%2Ftemperature_850&files=temperature_850_5.625deg.zip" -O temperature_850_5.625deg.zip```
+- Extract the dataset (make sure it is unzipped correctly) and place it in the data folder of your chosen branch
+- To start the training run ```python main.py```
+- For validation choose a checkpoint in the tmp fodler and run ```python main.py --load_checkpoitn checkpoint_x.pt --mode val```
+- In case of memory issues reduce the batch size by passing ```--batch_size 1``
