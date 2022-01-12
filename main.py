@@ -1,24 +1,30 @@
 import xarray as xr
 import os
 import numpy as np
-from dataloader import WeatherDataset
+from dataloader_old import WeatherDataset
 from models.GAN import GAT
 from evaluation import Graph_Model_Evaluator
 import torch
 from geometry_GNN import build_cube_edges
+import argparse
 
 
 
 if __name__ == '__main__':
 
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')    
+    # device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')    
 
     time_step = 12
     batch_size = 4
     save_and_load_edges = False
     #predict_feature = 'z' need to make this variable
+    parser = argparse.ArgumentParser(description='Pass arguments to weather prediction framework')
+    parser.add_argument('--data_path', default='./data', help='specify path to dataset')
+    parser.add_argument('--device', default='cpu', help='cuda or cpu')
+    args = parser.parse_args()
+    datadir = args.data_path
+    device = args.device
 
-    datadir = './data'
     #z = xr.open_mfdataset(f'{datadir}/geopotential_500/*.nc', combine='by_coords')
     ds = xr.open_mfdataset(f'{datadir}/temperature_850/temperature_850_5.625deg/*.nc', combine='by_coords')
     #ds = xr.merge([z, t], compat='override')  # Override level. discarded later anyway.
@@ -79,7 +85,7 @@ if __name__ == '__main__':
     for epoch in range(num_epochs):
         losses = []
         for i in range(len(dg_train)):
-            inputs, labels = dg_train.__getitem__(i)
+            inputs, labels = dg_train[i]
             labels = labels[:,:,:,:,[0]].to(device)
 
             optimizer.zero_grad()
