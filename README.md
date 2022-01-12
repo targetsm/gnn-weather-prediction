@@ -9,4 +9,4 @@ A possible command would be:
 - Extract the dataset (make sure it is unzipped correctly) and place it in a seperate folder.
 - To start the training run ```python main.py --data_path your_custom_path``` replacing ```your_custom_path``` with the path to the folder you placed your data in.
 - For validation choose a checkpoint in the tmp fodler and run ```python main.py --load_checkpoitn checkpoint_x.pt --mode val```
-- In case of memory issues reduce the batch size by passing ```--batch_size 1``
+- In case of memory issues reduce the batch size by passing ```--batch_size 1```
