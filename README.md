@@ -1,4 +1,9 @@
-# DL Project
+# GNNs for Global Weather Prediction
+
+Welcome to the GitHub page for our Deep Learning course project.
+Check out our [project report](GNN_Weather_Prediction.pdf).
+
+---
 
 Instructions to reproduce our results:
 
